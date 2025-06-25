@@ -1,10 +1,15 @@
 package com.nogueira.authentication_service.models;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import com.nogueira.authentication_service.enums.RoleEnum;
 import com.nogueira.authentication_service.enums.StatusEnum;
@@ -22,11 +27,13 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "users")
 @EntityListeners(AuditingEntityListener.class)
-public class User {
+public class User implements UserDetails{
 	
+	private static final long serialVersionUID = 1L;
 	@Id
+	
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer id;
+	private Long id;
 	private String name;
 	private String email;
 	private String password;
@@ -53,7 +60,7 @@ public class User {
 		this.status = status;
 	}
 	
-	public Integer getId() {
+	public Long getId() {
 		return id;
 	}
 	
@@ -104,5 +111,36 @@ public class User {
 	public LocalDateTime getUpdatedAt() {
 		return updatedAt;
 	}
+
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		if(this.role == RoleEnum.ADMIN) return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"));
+		else return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+	}
+
+	@Override
+	public String getUsername() {
+		return email;
+	}
+
+	 @Override
+	 public boolean isAccountNonExpired() {
+	    return true;
+	 }
+
+	 @Override
+	 public boolean isAccountNonLocked() {
+	    return true;
+	 }
+
+	 @Override
+	 public boolean isCredentialsNonExpired() {
+	    return true;
+	 }
+
+	 @Override
+	 public boolean isEnabled() {
+	    return true;
+	 }
 	
 }
