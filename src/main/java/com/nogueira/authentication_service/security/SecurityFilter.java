@@ -39,8 +39,8 @@ public class SecurityFilter extends OncePerRequestFilter{
 		String token = this.recoverToken(request);
 		if(token != null) {
 			String email = tokenService.validateAccessToken(token);
-			UserDetails user = repository.FindByEmail(email); //ficar atento pois o meu username é o email e eu coloquei find by email
-		
+			UserDetails user = repository.findByEmail(email); 
+			
 			Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
 			SecurityContextHolder.getContext().setAuthentication(auth);
 		}
