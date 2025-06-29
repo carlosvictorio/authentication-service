@@ -6,6 +6,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.nogueira.authentication_service.models.User;
 
 public interface UserRepository extends JpaRepository<User, Long>{
-	UserDetails FindByEmail(String email);
+	UserDetails findByEmail(String email);
 	Boolean existsByEmail(String email);
 }
