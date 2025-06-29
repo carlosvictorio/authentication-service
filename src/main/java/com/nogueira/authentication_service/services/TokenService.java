@@ -17,11 +17,13 @@ import com.nogueira.authentication_service.models.User;
 public class TokenService {
 	
 	@Value("${SECRET}")
-	private String secret;
+	private String accessSecret;
+	@Value("${REFRESH_SECRET}")
+	private String refreshSecret;
 	
 	public String generateAccessToken(User user) {
 		try {
-			Algorithm algorithm = Algorithm.HMAC256(secret);
+			Algorithm algorithm = Algorithm.HMAC256(accessSecret);
 			
 			String token = JWT.create()
 					.withIssuer("access")
@@ -31,21 +33,21 @@ public class TokenService {
 			
 			return token;
 		} catch(JWTCreationException e) {
-			throw new RuntimeException("Error while generation token: ", e);
+			throw new RuntimeException("Error while generating token: ", e);
 		}
 	}
 	
 	public String validateAccessToken(String token) {
 		
 		try {
-			Algorithm algorithm = Algorithm.HMAC256(secret);
+			Algorithm algorithm = Algorithm.HMAC256(accessSecret);
 			return JWT.require(algorithm)
 					.withIssuer("access")
 					.build()
 					.verify(token)
 					.getSubject();
 		} catch(JWTVerificationException e) {
-			return "";
+			return e.getMessage();
 		}
 	}
 	
@@ -55,7 +57,7 @@ public class TokenService {
 	
 	public String generateRefreshToken(User user) {
 		try {
-			Algorithm algorithm = Algorithm.HMAC256(secret);
+			Algorithm algorithm = Algorithm.HMAC256(refreshSecret);
 			
 			String token = JWT.create()
 					.withIssuer("refresh")
@@ -65,20 +67,20 @@ public class TokenService {
 			
 			return token;
 		} catch(JWTCreationException e) {
-			throw new RuntimeException("Error while generation refresh token: ", e);
+			throw new RuntimeException("Error while generating refresh token: ", e);
 		}
 	}
 	
 	public String validateRefreshToken(String token) {
 	    try {
-	        Algorithm algorithm = Algorithm.HMAC256(secret);
+	        Algorithm algorithm = Algorithm.HMAC256(refreshSecret);
 	        return JWT.require(algorithm)
 	                .withIssuer("refresh")
 	                .build()
 	                .verify(token)
 	                .getSubject();
 	    } catch (JWTVerificationException e) {
-	        return "";
+	        return e.getMessage();
 	    }
 	}
 	
