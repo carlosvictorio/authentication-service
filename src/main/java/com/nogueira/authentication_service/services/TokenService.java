@@ -47,7 +47,7 @@ public class TokenService {
 					.verify(token)
 					.getSubject();
 		} catch(JWTVerificationException e) {
-			return e.getMessage();
+			throw new RuntimeException(e.getMessage());
 		}
 	}
 	
@@ -80,7 +80,7 @@ public class TokenService {
 	                .verify(token)
 	                .getSubject();
 	    } catch (JWTVerificationException e) {
-	        return e.getMessage();
+	        throw new RuntimeException(e.getMessage());
 	    }
 	}
 	
