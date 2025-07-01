@@ -52,12 +52,12 @@ public class User implements UserDetails{
 	public User(){
 	}
 	 
-	public User(String name, String email, String password, RoleEnum role, StatusEnum status) {
+	public User(String name, String email, String password) {
 		this.name = name;
 		this.email = email;
 		this.password = password;
-		this.role = role;
-		this.status = status;
+		this.role = RoleEnum.USER;
+		this.status = StatusEnum.PENDING_PAYMENT;
 	}
 	
 	public Long getId() {
