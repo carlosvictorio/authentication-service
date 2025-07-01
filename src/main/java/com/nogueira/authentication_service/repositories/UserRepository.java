@@ -7,5 +7,6 @@ import com.nogueira.authentication_service.models.User;
 
 public interface UserRepository extends JpaRepository<User, Long>{
 	UserDetails findByEmail(String email);
+	User findByUsername(String email);
 	Boolean existsByEmail(String email);
 }
