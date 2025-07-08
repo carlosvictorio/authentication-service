@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.nogueira.authentication_service.models.User;
 import com.nogueira.authentication_service.repositories.UserRepository;
 import com.nogueira.authentication_service.services.TokenService;
 
@@ -39,9 +39,9 @@ public class SecurityFilter extends OncePerRequestFilter{
 		String token = this.recoverToken(request);
 		if(token != null) {
 			String email = tokenService.validateAccessToken(token);
-			UserDetails user = repository.findByEmail(email); 
+			User user = repository.findByEmail(email); 
 			
-			Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+			Authentication auth = new UsernamePasswordAuthenticationToken(user.getUsername(), null, user.getAuthorities());
 			SecurityContextHolder.getContext().setAuthentication(auth);
 		}
 		
