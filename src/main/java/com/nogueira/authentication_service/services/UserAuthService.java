@@ -5,11 +5,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.nogueira.authentication_service.dtos.AccessTokenDto;
+import com.nogueira.authentication_service.dtos.EmailDto;
 import com.nogueira.authentication_service.dtos.LoginUserDto;
 import com.nogueira.authentication_service.dtos.RegisterUserDto;
 import com.nogueira.authentication_service.dtos.TokensDto;
@@ -38,26 +37,26 @@ public class UserAuthService {
 		userRepository.save(newUser);
 	}
 	
-	public void activateStatus(String email) {
-		if(!userRepository.existsByEmail(email)) {
+	public void activateStatus(EmailDto email) {
+		if(!userRepository.existsByEmail(email.email())) {
 			throw new RuntimeException("User not exists!");
 		}
-		User user = userRepository.findByUsername(email);
+		User user = userRepository.findByEmail(email.email());
 		user.setStatus(StatusEnum.ACTIVE);
 		userRepository.save(user);
 	}
 	
-	public void pendingStatus(String email) {
-		if(!userRepository.existsByEmail(email)) {
+	public void pendingStatus(EmailDto email) {
+		if(!userRepository.existsByEmail(email.email())) {
 			throw new RuntimeException("User not exists!");
 		}
-		User user = userRepository.findByUsername(email);
+		User user = userRepository.findByEmail(email.email());
 		user.setStatus(StatusEnum.PENDING_PAYMENT);
 		userRepository.save(user);
 	}
 	
 	public TokensDto login(LoginUserDto user) {
-		User userFound = userRepository.findByUsername(user.email());
+		User userFound = userRepository.findByEmail(user.email());
 		if(userFound.getStatus() != StatusEnum.ACTIVE) throw new RuntimeException("pending payment!");
 		
 		try {
@@ -76,11 +75,8 @@ public class UserAuthService {
 	
 	public AccessTokenDto refresh(String refreshToken) {
 		String username = tokenService.validateRefreshToken(refreshToken);
-		User user = userRepository.findByUsername(username);
+		User user = userRepository.findByEmail(username);
 		if(user == null) throw new RuntimeException("Unauthorized!");
-		
-		Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-	    SecurityContextHolder.getContext().setAuthentication(auth);
 		
 		String newAccessToken = tokenService.generateAccessToken(user);
 		return new AccessTokenDto(newAccessToken);
