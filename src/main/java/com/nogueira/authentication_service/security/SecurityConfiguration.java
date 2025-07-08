@@ -30,7 +30,7 @@ public class SecurityConfiguration {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))//solução para o erro com CORS
 				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
+						.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/status/active", "/auth/status/pending" ,"/auth/login").permitAll()
 						.anyRequest().authenticated()
 				)
 				.addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
