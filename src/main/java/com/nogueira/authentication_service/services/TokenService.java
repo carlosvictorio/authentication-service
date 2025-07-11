@@ -10,7 +10,11 @@ import org.springframework.stereotype.Service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.nogueira.authentication_service.exceptions.UserUnauthorizedException;
 import com.nogueira.authentication_service.models.User;
 
 @Service
@@ -46,9 +50,15 @@ public class TokenService {
 					.build()
 					.verify(token)
 					.getSubject();
-		} catch(JWTVerificationException e) {
-			throw new RuntimeException(e.getMessage());
-		}
+		} catch (TokenExpiredException e) {
+	        throw new UserUnauthorizedException("Access token expired.");
+	    } catch (SignatureVerificationException e) {
+	        throw new UserUnauthorizedException("Invalid access token signature.");
+	    } catch (JWTDecodeException e) {
+	        throw new UserUnauthorizedException("Malformed access token.");
+	    } catch (JWTVerificationException e) {
+	        throw new UserUnauthorizedException("Invalid access token.");
+	    }
 	}
 	
 	private Instant generateInstant() {
@@ -79,8 +89,14 @@ public class TokenService {
 	                .build()
 	                .verify(token)
 	                .getSubject();
+	    } catch (TokenExpiredException e) {
+	    	throw new UserUnauthorizedException("Refresh token expired.");
+	    } catch (SignatureVerificationException e) {
+	    	throw new UserUnauthorizedException("Invalid refresh token signature.");
+	    } catch (JWTDecodeException e) {
+	    	throw new UserUnauthorizedException("Malformed refresh token.");
 	    } catch (JWTVerificationException e) {
-	        throw new RuntimeException(e.getMessage());
+	    	throw new UserUnauthorizedException("Invalid refresh token.");
 	    }
 	}
 	
