@@ -10,9 +10,13 @@ import org.springframework.stereotype.Service;
 import com.nogueira.authentication_service.dtos.AccessTokenDto;
 import com.nogueira.authentication_service.dtos.EmailDto;
 import com.nogueira.authentication_service.dtos.LoginUserDto;
+import com.nogueira.authentication_service.dtos.RefreshTokenDto;
 import com.nogueira.authentication_service.dtos.RegisterUserDto;
 import com.nogueira.authentication_service.dtos.TokensDto;
 import com.nogueira.authentication_service.enums.StatusEnum;
+import com.nogueira.authentication_service.exceptions.UserAlreadyExistsException;
+import com.nogueira.authentication_service.exceptions.UserNotFoundException;
+import com.nogueira.authentication_service.exceptions.UserUnauthorizedException;
 import com.nogueira.authentication_service.models.User;
 import com.nogueira.authentication_service.repositories.UserRepository;
 
@@ -30,53 +34,77 @@ public class UserAuthService {
 	
 	public void register(RegisterUserDto user) {
 		if(userRepository.existsByEmail(user.email())) {
-			throw new RuntimeException("User already registered!");
+			throw new UserAlreadyExistsException("User already registered!");
 		}
 		String encryptedPassword = passwordEncoder.encode(user.password());
 		User newUser = new User(user.name(), user.email(), encryptedPassword);
 		userRepository.save(newUser);
 	}
 	
-	public void activateStatus(EmailDto email) {
+	public String activateStatus(EmailDto email) {
 		if(!userRepository.existsByEmail(email.email())) {
-			throw new RuntimeException("User not exists!");
+			throw new UserNotFoundException("User not exists!");
 		}
+		
 		User user = userRepository.findByEmail(email.email());
+		
+		if(user.getStatus() == StatusEnum.ACTIVE) {
+			return "User status already ACTIVE!";
+		}
+		
 		user.setStatus(StatusEnum.ACTIVE);
 		userRepository.save(user);
+		return "User status updated successfully!";
 	}
 	
-	public void pendingStatus(EmailDto email) {
+	public String pendingStatus(EmailDto email) {
 		if(!userRepository.existsByEmail(email.email())) {
-			throw new RuntimeException("User not exists!");
+			throw new UserNotFoundException("User not exists!");
 		}
 		User user = userRepository.findByEmail(email.email());
+		
+		if(user.getStatus() == StatusEnum.PENDING_PAYMENT) {
+			return "User status already PENDING_PAYMENT!";
+		}
+		
 		user.setStatus(StatusEnum.PENDING_PAYMENT);
 		userRepository.save(user);
+		return "User status updated successfully!";
 	}
 	
 	public TokensDto login(LoginUserDto user) {
-		User userFound = userRepository.findByEmail(user.email());
-		if(userFound.getStatus() != StatusEnum.ACTIVE) throw new RuntimeException("pending payment!");
-		
+	
 		try {
-		var usernamePassword = new UsernamePasswordAuthenticationToken(user.email(), user.password());
-		var auth = authenticationManager.authenticate(usernamePassword);
-		var accessToken = tokenService.generateAccessToken((User)auth.getPrincipal());
-		var refreshToken = tokenService.generateRefreshToken((User)auth.getPrincipal());
-		return new TokensDto(accessToken, refreshToken);
+			var usernamePassword = new UsernamePasswordAuthenticationToken(user.email(), user.password());
+			var auth = authenticationManager.authenticate(usernamePassword);
 		
+			User authenticatedUser = (User) auth.getPrincipal();
+		 
+			if(authenticatedUser.getStatus() != StatusEnum.ACTIVE) throw new UserUnauthorizedException("Pending payment.");
+		
+			var accessToken = tokenService.generateAccessToken((User)auth.getPrincipal());
+			var refreshToken = tokenService.generateRefreshToken((User)auth.getPrincipal());
+			return new TokensDto(accessToken, refreshToken);
+		
+		}catch (UserUnauthorizedException e) {
+		    throw e;
 		}catch(BadCredentialsException e) {
-			throw new BadCredentialsException("Credenciais inválidas: ", e);
+			throw new BadCredentialsException(e.getMessage());
 		}catch(Exception e) {
 			throw new RuntimeException("Erro inesperado: " + e.getMessage());
 		}
 	}
 	
-	public AccessTokenDto refresh(String refreshToken) {
-		String username = tokenService.validateRefreshToken(refreshToken);
+	public AccessTokenDto refresh(RefreshTokenDto refreshToken) {
+		
+		if (refreshToken == null || refreshToken.refreshToken() == null) {
+		    throw new UserUnauthorizedException("Invalid refresh token");
+		}
+
+		String username = tokenService.validateRefreshToken(refreshToken.refreshToken());
 		User user = userRepository.findByEmail(username);
-		if(user == null) throw new RuntimeException("Unauthorized!");
+		
+		if(user == null) throw new UserUnauthorizedException("User not found for provided token!");
 		
 		String newAccessToken = tokenService.generateAccessToken(user);
 		return new AccessTokenDto(newAccessToken);
