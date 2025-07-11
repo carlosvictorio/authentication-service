@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.nogueira.authentication_service.exceptions.UserUnauthorizedException;
 import com.nogueira.authentication_service.models.User;
 import com.nogueira.authentication_service.repositories.UserRepository;
 import com.nogueira.authentication_service.services.TokenService;
@@ -36,16 +37,25 @@ public class SecurityFilter extends OncePerRequestFilter{
 			return;
 		}
 		
-		String token = this.recoverToken(request);
-		if(token != null) {
-			String email = tokenService.validateAccessToken(token);
-			User user = repository.findByEmail(email); 
+		try {
+			String token = this.recoverToken(request);
+			if(token != null) {
+				String email = tokenService.validateAccessToken(token);
+				User user = repository.findByEmail(email); 
 			
-			Authentication auth = new UsernamePasswordAuthenticationToken(user.getUsername(), null, user.getAuthorities());
-			SecurityContextHolder.getContext().setAuthentication(auth);
-		}
+				Authentication auth = new UsernamePasswordAuthenticationToken(user.getUsername(), null, user.getAuthorities());
+				SecurityContextHolder.getContext().setAuthentication(auth);
+			}
 		
 		filterChain.doFilter(request, response);
+		
+		} catch (UserUnauthorizedException ex) {
+	        // Captura a exceção e responde 401 + mensagem JSON
+	        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	        response.setContentType("application/json");
+	        response.getWriter().write("{\"error\": \"" + ex.getMessage() + "\"}");
+	        response.getWriter().flush();
+	    }
 	}
 	
 	private String recoverToken(HttpServletRequest request) {
