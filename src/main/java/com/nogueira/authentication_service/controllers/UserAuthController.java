@@ -10,9 +10,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nogueira.authentication_service.dtos.AccessTokenDto;
 import com.nogueira.authentication_service.dtos.EmailDto;
 import com.nogueira.authentication_service.dtos.LoginUserDto;
+import com.nogueira.authentication_service.dtos.RefreshTokenDto;
 import com.nogueira.authentication_service.dtos.RegisterUserDto;
 import com.nogueira.authentication_service.dtos.TokensDto;
 import com.nogueira.authentication_service.services.UserAuthService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
@@ -22,33 +25,33 @@ public class UserAuthController {
 	private UserAuthService userService;
 	
 	@PostMapping("/register")
-	public ResponseEntity<String> register(@RequestBody RegisterUserDto user) {
+	public ResponseEntity<String> register(@RequestBody @Valid RegisterUserDto user) {
 		userService.register(user);
 		return ResponseEntity.status(201).body("User registered successfully!");
 	}
 	
 	@PostMapping("/login")
-	public ResponseEntity<TokensDto> login(@RequestBody LoginUserDto user) {
+	public ResponseEntity<TokensDto> login(@RequestBody @Valid LoginUserDto user) {
 		TokensDto tokens = userService.login(user);
 		return ResponseEntity.ok(tokens);
 	}
 	
 	@PostMapping("/refresh")
-	public ResponseEntity<AccessTokenDto> refresh(@RequestBody String refreshToken) {
+	public ResponseEntity<AccessTokenDto> refresh(@RequestBody RefreshTokenDto refreshToken) {
 		AccessTokenDto accessToken = userService.refresh(refreshToken);
 		return ResponseEntity.ok(accessToken);
 	}
 	
 	@PostMapping("/status/active")
-	public ResponseEntity<String> activateStatus(@RequestBody EmailDto email) {
-		userService.activateStatus(email);
-		return ResponseEntity.ok("Status updated successfully!");
+	public ResponseEntity<String> activateStatus(@RequestBody @Valid EmailDto email) {
+		String msg = userService.activateStatus(email);
+		return ResponseEntity.ok(msg);
 	}
 	
 	@PostMapping("/status/pending")
-	public ResponseEntity<String> pendingStatus(@RequestBody EmailDto email) {
-		userService.pendingStatus(email);
-		return ResponseEntity.ok("Status updated successfully!");
+	public ResponseEntity<String> pendingStatus(@RequestBody @Valid EmailDto email) {
+		String msg = userService.pendingStatus(email);
+		return ResponseEntity.ok(msg);
 	}
 
 }
